@@ -1,0 +1,34 @@
+cmake_minimum_required(VERSION 2.8)
+
+set(IS_ROOT FALSE)
+if("${CMAKE_PROJECT_DIR}" STREQUAL "")
+	project(RakService)
+	set(IS_ROOT TRUE)
+	
+	set(EXECUTABLE_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
+	set(LIBRARY_OUTPUT_PATH ${PROJECT_BINARY_DIR}/bin)
+	set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
+endif()
+
+
+option(RAKSERVICE_DEVELOPMENT "Enable development" OFF)
+
+if(${RAKSERVICE_DEVELOPMENT})
+	add_subdirectory(RakNet)
+	include_directories(${RAKNET_INCLUDE_DIRS})
+endif(${RAKSERVICE_DEVELOPMENT})
+
+set(RAKSERVICE_INCLUDE_DIRS "include")
+include_directories(${RAKSERVICE_INCLUDE_DIRS})
+
+set(RAKSERVICE_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/source/RakService.cpp ${CMAKE_CURRENT_SOURCE_DIR}/include/RakService.hpp)
+
+add_library(rak-service ${RAKSERVICE_SOURCE})
+
+if(${RAKSERVICE_DEVELOPMENT})
+	add_subdirectory(samples)
+endif(${RAKSERVICE_DEVELOPMENT})
+
+if(NOT IS_ROOT)
+	set(RAKSERVICE_INCLUDE_DIRS ${RAKSERVICE_INCLUDE_DIRS} PARENT_SCOPE)
+endif()
