@@ -34,9 +34,8 @@ namespace RakNet {
 	}
 
 
-	RakServicePlugin::RakServicePlugin(NetworkIDManager* idManager, char channel)
-		: mIdManager(idManager)
-		, mChannel(channel)
+	RakServicePlugin::RakServicePlugin(char channel)
+		: mChannel(channel)
 		, mNextReturnSlotId(42)
 		, mNextServiceId(2)
 	{

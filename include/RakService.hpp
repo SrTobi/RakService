@@ -267,7 +267,7 @@ namespace RakNet {
 		typedef std::function<void(detail::DeserializationArgs&)> ServiceFunctionReturnSlot;
 		typedef detail::ReturnSlotId ReturnSlotId;
 	public:
-		RakServicePlugin(NetworkIDManager* idManager, char channel = 0);
+		RakServicePlugin(char channel = 0);
 		virtual ~RakServicePlugin();
 
 		void AddService(const char* name, RakService* service);

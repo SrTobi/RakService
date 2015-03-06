@@ -117,9 +117,8 @@ int main()
 
 
 	// Register RPC.
-	NetworkIDManager networkIDManager;
 	RakNet::PacketLogger logger;
-	RakNet::RakServicePlugin srvPlugin(&networkIDManager);
+	RakNet::RakServicePlugin srvPlugin;
 	peer->AttachPlugin(&srvPlugin);
 	//peer->AttachPlugin(&logger);
 	// rpc3.SetNetworkIDManager(&networkIDManager);
