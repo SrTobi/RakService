@@ -60,7 +60,13 @@ namespace RakNet {
 
 	RakService* RakServicePlugin::RemoveService(const char* name)
 	{
-		throw std::logic_error("Not implemented!");
+		auto it = mWelcomeServices.find(name);
+		if (it == mWelcomeServices.end())
+			return nullptr;
+
+		auto* service = it->second;
+		mWelcomeServices.erase(it);
+		return service;
 	}
 
 	void RakServicePlugin::IntroduceService(RakService* service)
