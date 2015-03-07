@@ -22,13 +22,14 @@ namespace RakNet {
 
 			if (!isNull)
 			{
-				RakAssert(!_p->isForeign());
-				if (!_p->plugin())
+				auto details = _p->GetServiceDetails();
+				RakAssert(!details.IsForeignService());
+				if (!details.GetRakServicePlugin())
 				{
 					args.plugin->IntroduceService(_p);
 				}
-				RakAssert(args.plugin == _p->plugin());
-				args.stream.Write(_p->serviceId());
+				RakAssert(args.plugin == details.GetRakServicePlugin());
+				args.stream.Write(details.GetServiceId());
 			}
 		}
 	}
@@ -64,14 +65,15 @@ namespace RakNet {
 
 	void RakServicePlugin::IntroduceService(RakService* service)
 	{
-		if (service->plugin() == this)
+		auto details = service->GetServiceDetails();
+		if (details.GetRakServicePlugin() == this)
 			return;
-		RakAssert(service->plugin() == nullptr);
+		RakAssert(details.GetRakServicePlugin() == nullptr);
 
-		service->mServicePlugin = this;
-		service->mServiceId = mNextServiceId++;
+		service->_mServicePlugin = this;
+		service->_mServiceId = mNextServiceId++;
 
-		mServices.emplace(service->serviceId(), service);
+		mServices.emplace(details.GetServiceId(), service);
 	}
 
 	void RakServicePlugin::OnAttach(void)
@@ -210,8 +212,8 @@ namespace RakNet {
 		void addService(RakService* service)
 		{
 			RakAssert(service);
-			RakAssert(service->plugin());
-			auto res = mServices.emplace(service->serviceId(), std::unique_ptr<RakService>(service));
+			auto details = service->GetServiceDetails();
+			auto res = mServices.emplace(details.GetServiceId(), std::unique_ptr<RakService>(service));
 			RakAssert(res.second);
 		}
 
@@ -248,23 +250,19 @@ namespace RakNet {
 
 	void RakServicePlugin::_AddForeignService(const SystemAddress& addr, RakServiceId sid, RakService* serivce)
 	{
-		RakAssert(serivce->plugin() == nullptr);
-		serivce->mServicePlugin = this;
-		serivce->mServiceId = sid;
+		RakAssert(serivce->GetServiceDetails().GetRakServicePlugin() == nullptr);
+		serivce->_mServicePlugin = this;
+		serivce->_mServiceId = sid;
 		_GetForeignServiceTable(addr)->addService(serivce);
 	}
 
 	/************************************** RakService **************************************/
-	RakService::RakService()
-		: mServicePlugin(nullptr)
-	{
-	}
 
 	RakService::~RakService()
 	{
 	}
 
-	bool RakService::isForeign() const
+	bool RakService::_IsForeignService() const
 	{
 		return false;
 	}
@@ -273,12 +271,12 @@ namespace RakNet {
 	{
 		stream.Write(MessageID(ID_RPC_PLUGIN));
 		stream.Write(MessageID(ServiceMessageIds::SMI_INVOKE));
-		stream.Write(RakServiceId(serviceId()));
+		stream.Write(RakServiceId(_mServiceId));
 		stream.Write(_funcId);
 	}
 
 	void RakService::_EndCall(const BitStream& _stream, const SystemAddress& _address)
 	{
-		plugin()->_EndCall(_stream, _address);
+		_mServicePlugin->_EndCall(_stream, _address);
 	}
 }

@@ -150,7 +150,8 @@ namespace RakNet {
 			template<typename... Sig>
 			static void write(SerializationArgs& args, const std::function<void(Sig...)>& _func)
 			{
-				args.stream.Write(args.plugin->_RegisterReturn(WrapFunction(_func)));
+				auto id = args.plugin->_RegisterReturn(WrapFunction(_func));
+				args.stream << id;
 			}
 		};
 
@@ -159,7 +160,7 @@ namespace RakNet {
 			template<typename T>
 			static void write(SerializationArgs& args, const T& _val)
 			{
-				args.stream.Write(_val);
+				args.stream << _val;
 			}
 		};
 
@@ -193,7 +194,7 @@ namespace RakNet {
 			static void read(DeserializationArgs& args, std::function<void(Args...)>& _func)
 			{
 				ReturnSlotId rid;
-				args.stream.Read(rid);
+				args.stream >> rid;
 				_func = MakeInkoation<Args...>(args.plugin, rid, args.recvAddress);
 			}
 		};
@@ -223,7 +224,7 @@ namespace RakNet {
 				}
 
 				RakServiceId sid;
-				args.stream.Read(sid);
+				args.stream >> sid;
 				_p = args.plugin->GetForeignService<T>(args.recvAddress, sid);
 			}
 		};
@@ -375,17 +376,51 @@ namespace RakNet {
 		const RakServiceFunctionMetaInfo* mEndFunctions;
 	};
 
+	template<typename Target>
+	class RakServiceDetails
+	{
+		friend class RakService;
+	public:
+		bool IsForeignService() const
+		{
+			return mService._IsForeignService();
+		}
+
+		const RakServiceMetaInfo* GetMetaInfo() const
+		{ 
+			return mService._GetMetaInfo();
+		}
+
+		RakServiceId GetServiceId() const
+		{
+			RakAssert(GetRakServicePlugin());
+			return mService.mServiceId;
+		}
+
+		RakServicePlugin* GetRakServicePlugin() const
+		{
+			return mService.mServicePlugin;
+		}
+	private:
+		inline RakServiceDetails(Target& _service)
+			: mService(_service)
+		{
+		}
+
+	private:
+		Target& mService;
+	};
+
 	class RakService
 	{
+		template<typename Target>
+		friend class RakServiceDetails;
 		friend class RakServicePlugin;
 	public:
-		RakService();
 		virtual ~RakService();
 
-		virtual bool isForeign() const;
-		virtual RakServiceMetaInfo* metaInfo() const = 0;
-		inline RakServiceId serviceId() const { return mServiceId; }
-		inline RakServicePlugin* plugin() const { return mServicePlugin; }
+		inline RakServiceDetails<RakService> GetServiceDetails() { return{ *this }; }
+		inline RakServiceDetails<const RakService> GetServiceDetails() const { return{ *this }; }
 	protected:
 		void _BeginCall(BitStream& stream, ServiceFunctionId _funcId);
 		template<typename T>
@@ -395,10 +430,12 @@ namespace RakNet {
 		}
 		void _EndCall(const BitStream& _stream, const SystemAddress& _address);
 		virtual bool _Invoke(detail::DeserializationArgs& _stream, ServiceFunctionId _func) = 0;
+		virtual const RakServiceMetaInfo* _GetMetaInfo() const = 0;
+		virtual bool _IsForeignService() const;
 
 	private:
-		RakServicePlugin* mServicePlugin;
-		RakServiceId mServiceId;
+		RakServicePlugin* _mServicePlugin = nullptr;
+		RakServiceId _mServiceId = 0;
 	};
 
 	template<typename ServiceType>
@@ -407,8 +444,9 @@ namespace RakNet {
 		friend class RakServicePlugin;
 	public:
 		static RakServiceMetaInfo* MetaInfo();
-		inline virtual RakServiceMetaInfo* metaInfo() const override { return MetaInfo(); }
+
 	protected:
+		inline virtual RakServiceMetaInfo* _GetMetaInfo() const override { return MetaInfo(); }
 		virtual bool _Invoke(detail::DeserializationArgs& _stream, ServiceFunctionId _func) override;
 
 	private:

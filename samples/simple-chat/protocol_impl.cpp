@@ -17,15 +17,16 @@ public:
 
 	virtual void print(RakNet::RakString _test, std::function<void()> _done) override
 	{
+		auto details = GetServiceDetails();
 		::RakNet::BitStream stream;
-		::RakNet::detail::SerializationArgs sargs(stream, plugin());
+		::RakNet::detail::SerializationArgs sargs(stream, details.GetRakServicePlugin());
 		_BeginCall(stream, ::RakNet::ServiceFunctionId(FunctionIds::FUNC_print));
 		_AddArg(sargs, _test);
 		_AddArg(sargs, _done);
 		_EndCall(stream, mForeignTargetAddress);
 	}
 
-	virtual bool isForeign() const override
+	virtual bool _IsForeignService() const override
 	{
 		return true;
 	}
