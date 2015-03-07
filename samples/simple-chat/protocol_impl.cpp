@@ -17,9 +17,9 @@ public:
 
 	virtual void print(RakNet::RakString _test, std::function<void()> _done) override
 	{
-		auto details = GetServiceDetails();
+		auto sc = GetServiceController();
 		::RakNet::BitStream stream;
-		::RakNet::detail::SerializationArgs sargs(stream, details.GetRakServicePlugin());
+		::RakNet::detail::SerializationArgs sargs(stream, sc.GetRakServicePlugin());
 		_BeginCall(stream, ::RakNet::ServiceFunctionId(FunctionIds::FUNC_print));
 		_AddArg(sargs, _test);
 		_AddArg(sargs, _done);

@@ -377,7 +377,7 @@ namespace RakNet {
 	};
 
 	template<typename Target>
-	class RakServiceDetails
+	class RakServiceController
 	{
 		friend class RakService;
 	public:
@@ -402,7 +402,7 @@ namespace RakNet {
 			return mService._mServicePlugin;
 		}
 	private:
-		inline RakServiceDetails(Target& _service)
+		inline RakServiceController(Target& _service)
 			: mService(_service)
 		{
 		}
@@ -414,13 +414,13 @@ namespace RakNet {
 	class RakService
 	{
 		template<typename Target>
-		friend class RakServiceDetails;
+		friend class RakServiceController;
 		friend class RakServicePlugin;
 	public:
 		virtual ~RakService();
 
-		inline RakServiceDetails<RakService> GetServiceDetails() { return{ *this }; }
-		inline RakServiceDetails<const RakService> GetServiceDetails() const { return{ *this }; }
+		inline RakServiceController<RakService> GetServiceController() { return{ *this }; }
+		inline RakServiceController<const RakService> GetServiceController() const { return{ *this }; }
 	protected:
 		virtual void OnConnect();
 		virtual void OnDisconnect();

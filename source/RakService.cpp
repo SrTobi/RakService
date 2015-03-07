@@ -22,14 +22,14 @@ namespace RakNet {
 
 			if (!isNull)
 			{
-				auto details = _p->GetServiceDetails();
-				RakAssert(!details.IsForeignService());
-				if (!details.GetRakServicePlugin())
+				auto controller = _p->GetServiceController();
+				RakAssert(!controller.IsForeignService());
+				if (!controller.GetRakServicePlugin())
 				{
 					args.plugin->IntroduceService(_p);
 				}
-				RakAssert(args.plugin == details.GetRakServicePlugin());
-				args.stream.Write(details.GetServiceId());
+				RakAssert(args.plugin == controller.GetRakServicePlugin());
+				args.stream.Write(controller.GetServiceId());
 			}
 		}
 	}
@@ -65,15 +65,15 @@ namespace RakNet {
 
 	void RakServicePlugin::IntroduceService(RakService* service)
 	{
-		auto details = service->GetServiceDetails();
-		if (details.GetRakServicePlugin() == this)
+		auto controller = service->GetServiceController();
+		if (controller.GetRakServicePlugin() == this)
 			return;
-		RakAssert(details.GetRakServicePlugin() == nullptr);
+		RakAssert(controller.GetRakServicePlugin() == nullptr);
 
 		service->_mServicePlugin = this;
 		service->_mServiceId = mNextServiceId++;
 
-		mServices.emplace(details.GetServiceId(), service);
+		mServices.emplace(controller.GetServiceId(), service);
 	}
 
 	void RakServicePlugin::OnAttach(void)
@@ -224,8 +224,8 @@ namespace RakNet {
 		void addService(RakService* service)
 		{
 			RakAssert(service);
-			auto details = service->GetServiceDetails();
-			auto res = mServices.emplace(details.GetServiceId(), std::unique_ptr<RakService>(service));
+			auto controller = service->GetServiceController();
+			auto res = mServices.emplace(controller.GetServiceId(), std::unique_ptr<RakService>(service));
 			RakAssert(res.second);
 		}
 
@@ -262,7 +262,7 @@ namespace RakNet {
 
 	void RakServicePlugin::_AddForeignService(const SystemAddress& addr, RakServiceId sid, RakService* serivce)
 	{
-		RakAssert(serivce->GetServiceDetails().GetRakServicePlugin() == nullptr);
+		RakAssert(serivce->GetServiceController().GetRakServicePlugin() == nullptr);
 		serivce->_mServicePlugin = this;
 		serivce->_mServiceId = sid;
 		_GetForeignServiceTable(addr)->addService(serivce);
