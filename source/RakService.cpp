@@ -169,6 +169,16 @@ namespace RakNet {
 		_stream.Read(serviceName);
 
 		RakService* service = GetService(serviceName.C_String());
+
+		if (!service)
+		{
+
+		}
+
+		service->_mRecvAddress = packet->systemAddress;
+		service->OnConnect();
+		service->_mRecvAddress = UNASSIGNED_SYSTEM_ADDRESS;
+
 		BitStream retStream;
 		detail::DeserializationArgs args(_stream, this, packet->systemAddress);
 		std::function<void(RakService*)> retFunc;
@@ -202,7 +212,9 @@ namespace RakNet {
 			ServiceFunctionId fid;
 			_stream.Read(fid);
 			detail::DeserializationArgs sargs(_stream, this, packet->systemAddress);
+			service->_mRecvAddress = packet->systemAddress;
 			service->_Invoke(sargs, fid);
+			service->_mRecvAddress = UNASSIGNED_SYSTEM_ADDRESS;
 		}
 	}
 
@@ -262,9 +274,12 @@ namespace RakNet {
 	{
 	}
 
-	bool RakService::_IsForeignService() const
+	void RakService::OnConnect()
 	{
-		return false;
+	}
+
+	void RakService::OnDisconnect()
+	{
 	}
 
 	void RakService::_BeginCall(BitStream& stream, ServiceFunctionId _funcId)
@@ -278,5 +293,10 @@ namespace RakNet {
 	void RakService::_EndCall(const BitStream& _stream, const SystemAddress& _address)
 	{
 		_mServicePlugin->_EndCall(_stream, _address);
+	}
+
+	bool RakService::_IsForeignService() const
+	{
+		return false;
 	}
 }

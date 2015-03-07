@@ -6,6 +6,8 @@
 #include <iostream> // Defines std::cin, std::cout, ...
 #include <string> // Defines std::string
 #include <sstream> // Defines std::istringstream
+#include <chrono>
+#include <thread>
 
 // RakNet headers
 #include "RakAssert.h"
@@ -77,6 +79,11 @@ public:
 		cout << _test << std::endl;
 		done();
 	}
+
+	virtual void OnConnect() override
+	{
+		std::cout << "Service connected from " << InvokeOrigin().ToString() << std::endl;
+	}
 };
 
 
@@ -146,6 +153,9 @@ int main()
 			// RPC call.
 			cout << "RPC call PrintMessage(\"" << chatMessage << "\")" << endl;
 			service->print(RakNet::RakString(chatMessage.c_str()), []() {std::cout << "Call returned!" << std::endl; });
+		}
+		else{
+			std::this_thread::sleep_for(std::chrono::milliseconds(10));
 		}
 
 		// Get the next packet.

@@ -394,12 +394,12 @@ namespace RakNet {
 		RakServiceId GetServiceId() const
 		{
 			RakAssert(GetRakServicePlugin());
-			return mService.mServiceId;
+			return mService._mServiceId;
 		}
 
 		RakServicePlugin* GetRakServicePlugin() const
 		{
-			return mService.mServicePlugin;
+			return mService._mServicePlugin;
 		}
 	private:
 		inline RakServiceDetails(Target& _service)
@@ -422,6 +422,12 @@ namespace RakNet {
 		inline RakServiceDetails<RakService> GetServiceDetails() { return{ *this }; }
 		inline RakServiceDetails<const RakService> GetServiceDetails() const { return{ *this }; }
 	protected:
+		virtual void OnConnect();
+		virtual void OnDisconnect();
+
+		const SystemAddress& InvokeOrigin() const { return _mRecvAddress; }
+
+	protected:
 		void _BeginCall(BitStream& stream, ServiceFunctionId _funcId);
 		template<typename T>
 		void _AddArg(detail::SerializationArgs& sargs, const T& _arg)
@@ -436,6 +442,7 @@ namespace RakNet {
 	private:
 		RakServicePlugin* _mServicePlugin = nullptr;
 		RakServiceId _mServiceId = 0;
+		SystemAddress _mRecvAddress;
 	};
 
 	template<typename ServiceType>
