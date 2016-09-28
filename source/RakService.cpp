@@ -171,22 +171,24 @@ namespace RakNet {
 
 	void RakServicePlugin::_HandleConnect(BitStream& _stream, Packet* packet)
 	{
+		const auto& recvAddr = packet->systemAddress;
 		RakNet::RakString serviceName;
 		_stream.Read(serviceName);
 
 		RakService* service = GetService(serviceName.C_String());
 
-		if (!service)
+		if (service)
 		{
+			service->_mRecvAddress = recvAddr;
+			service->OnConnect();
+			service->_mRecvAddress = UNASSIGNED_SYSTEM_ADDRESS;
 
+			// add service
+			_AddForeignServiceHandle(recvAddr, service);
 		}
 
-		service->_mRecvAddress = packet->systemAddress;
-		service->OnConnect();
-		service->_mRecvAddress = UNASSIGNED_SYSTEM_ADDRESS;
-
 		BitStream retStream;
-		detail::DeserializationArgs args(_stream, this, packet->systemAddress);
+		detail::DeserializationArgs args(_stream, this, recvAddr);
 		std::function<void(RakService*)> retFunc;
 		detail::DeserializeFunction::read(args, retFunc);
 		retFunc(service);
@@ -231,8 +233,14 @@ namespace RakNet {
 		{
 			RakAssert(service);
 			auto controller = service->GetServiceController();
-			auto res = mServices.emplace(controller.GetServiceId(), std::unique_ptr<RakService>(service));
-			RakAssert(res.second);
+			if (controller.IsForeignService())
+			{
+				auto res = mServices.emplace(controller.GetServiceId(), std::unique_ptr<RakService>(service));
+				RakAssert(res.second);
+			}
+			else{
+				mLocallyKnownServices[controller.GetServiceId()]++;
+			}
 		}
 
 		RakService* getService(RakServiceId sid)
@@ -243,6 +251,7 @@ namespace RakNet {
 
 	private:
 		std::unordered_map<RakServiceId, std::unique_ptr<RakService>> mServices;
+		std::unordered_map<RakServiceId, unsigned int> mLocallyKnownServices;
 	};
 
 	RakServicePlugin::ForeignServiceTable* RakServicePlugin::_GetForeignServiceTable(const SystemAddress& addr)
@@ -274,8 +283,19 @@ namespace RakNet {
 		_GetForeignServiceTable(addr)->addService(serivce);
 	}
 
-	/************************************** RakService **************************************/
+	void RakServicePlugin::_AddForeignServiceHandle(const SystemAddress& addr, RakService* service)
+	{
+		RakAssert(service);
+		RakAssert(!service->GetServiceController().IsForeignService());
+		_GetForeignServiceTable(addr)->addService(service);
+	}
 
+	/************************************** RakService **************************************/
+	RakService::RakService()
+	{
+		_mDisconnectHandler = std::bind(&RakService::OnDisconnect, this);
+	}
+	
 	RakService::~RakService()
 	{
 	}

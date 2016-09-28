@@ -7,6 +7,7 @@
 #include <memory>
 #include <unordered_map>
 #include <tuple>
+#include <forward_list>
 
 #include "PluginInterface2.h"
 #include "BitStream.h"
@@ -322,6 +323,7 @@ namespace RakNet {
 		ForeignServiceTable*_GetForeignServiceTable(const SystemAddress& addr);
 		RakService* _GetForeignService(const SystemAddress& addr, RakServiceId sid);
 		void _AddForeignService(const SystemAddress& addr, RakServiceId sid, RakService* serivce);
+		void _AddForeignServiceHandle(const SystemAddress& addr, RakService* service);
 	private:
 		NetworkIDManager* mIdManager;
 		const char mChannel;
@@ -401,6 +403,16 @@ namespace RakNet {
 		{
 			return mService._mServicePlugin;
 		}
+
+		void Disconnect()
+		{
+			mService._Disconnect();
+		}
+
+		void SetDisconnectHandler(const std::function<void(RakService*, const SystemAddress&)>& _handler)
+		{
+			mService._mDisconnectHandler = _handler;
+		}
 	private:
 		inline RakServiceController(Target& _service)
 			: mService(_service)
@@ -417,6 +429,7 @@ namespace RakNet {
 		friend class RakServiceController;
 		friend class RakServicePlugin;
 	public:
+		RakService();
 		virtual ~RakService();
 
 		inline RakServiceController<RakService> GetServiceController() { return{ *this }; }
@@ -438,11 +451,14 @@ namespace RakNet {
 		virtual bool _Invoke(detail::DeserializationArgs& _stream, ServiceFunctionId _func) = 0;
 		virtual const RakServiceMetaInfo* _GetMetaInfo() const = 0;
 		virtual bool _IsForeignService() const;
+	private:
+		void _Disconnect();
 
 	private:
 		RakServicePlugin* _mServicePlugin = nullptr;
 		RakServiceId _mServiceId = 0;
 		SystemAddress _mRecvAddress;
+		std::function<void(RakService*, const SystemAddress&)> _mDisconnectHandler;
 	};
 
 	template<typename ServiceType>
